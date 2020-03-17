@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSYGRES_HOST_AUTH_METHOD: trust
+  migration:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+    command: python manage.py migrate
+    volumes:
+      - ..:/app/
+    depends_on: 
+    - db
+  test:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+    command: python manage.py test
+    volumes:
+      - ..:/app/
+    depends_on: 
+      - migration
+      - db
+  web:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    command: python ./manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ..:/app/
+    depends_on: 
+      - migration
+      - db
