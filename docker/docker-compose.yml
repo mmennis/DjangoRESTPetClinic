@@ -4,7 +4,7 @@ services:
   db:
     image: postgres
     environment:
-      POSYGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_HOST_AUTH_METHOD: trust
   migration:
     build: 
       context: ../
@@ -28,9 +28,10 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    command: python ./manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ..:/app/
+    ports: 
+      - "8000:8000"
     depends_on: 
-      - migration
       - db
