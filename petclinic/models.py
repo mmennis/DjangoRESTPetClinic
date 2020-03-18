@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 # Owner
 class Owner(models.Model):
@@ -45,12 +46,25 @@ class Vet(models.Model):
 class PetType(models.Model):
     name = models.CharField(max_length=32)
 
+    def __str__(self):
+        return self.name
+
 # Pet
 class Pet(models.Model):
     name = models.CharField(max_length=30, blank=False)
     birth_date = models.DateField()
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     pet_type = models.ForeignKey(PetType, null=True, on_delete=models.SET_NULL,)
+
+
+    def age(self):
+        """
+        return a timedelta object for curent age
+        """
+        return timezone.now() - self.birth_date
+
+    def __str__(self):
+        return ("%s aged ")
 
 # Visit
 class Visit(models.Model):
