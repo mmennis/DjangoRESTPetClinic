@@ -10,9 +10,18 @@ class Owner(models.Model):
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)
 
+    def full_name(self):
+        return "%s %s" % (self.first_name, self.last_name)
+
+    def __str__(self):
+        return "%s, %s" % (self.full_name(), self.email)
+
 # Specialty
 class Specialty(models.Model):
-    name: models.CharField(max_length=30, unique=True)
+    name: models.CharField(max_length=30, unique=True, null=False)
+
+    def __str__(self):
+        return self.name
 
 # Vet
 class Vet(models.Model):
@@ -24,6 +33,13 @@ class Vet(models.Model):
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)  
     specialty = models.ForeignKey(Specialty, null=True, on_delete=models.SET_NULL)
+
+    def full_name(self):
+        return "%s %s" % (self.first_name, self.last_name)
+
+    def __str__(self):
+        return "%s, %s" % (self.full_name(), self.email)
+
     
 # Pet Type
 class PetType(models.Model):

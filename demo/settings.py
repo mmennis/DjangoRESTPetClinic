@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'coverage',
     'petclinic.apps.PetclinicConfig',
     'django.contrib.admin',
     'django.contrib.auth',
