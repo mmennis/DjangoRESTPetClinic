@@ -11,6 +11,17 @@ class Owner(models.Model):
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(Owner, self).save(*args, **kwargs)
 
     def full_name(self):
         return "%s %s" % (self.first_name, self.last_name)
@@ -21,6 +32,17 @@ class Owner(models.Model):
 # Specialty
 class Specialty(models.Model):
     name = models.CharField(max_length=30, unique=True, null=False)
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(Specialty, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -35,6 +57,17 @@ class Vet(models.Model):
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)  
     specialty = models.ForeignKey(Specialty, null=True, on_delete=models.SET_NULL, related_name='vets')
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(Vet, self).save(*args, **kwargs)
 
     def full_name(self):
         return "%s %s" % (self.first_name, self.last_name)
@@ -46,6 +79,17 @@ class Vet(models.Model):
 # Pet Type
 class PetType(models.Model):
     name = models.CharField(max_length=32)
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(PetType, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -56,6 +100,17 @@ class Pet(models.Model):
     birth_date = models.DateField()
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets')
     pet_type = models.ForeignKey(PetType, null=True, on_delete=models.SET_NULL, related_name='pets')
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(Pet, self).save(*args, **kwargs)
 
 
     def age(self):
@@ -72,3 +127,14 @@ class Visit(models.Model):
     visit_date = models.DateTimeField(auto_now=True)
     description = models.TextField(max_length=1000)
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='visits')
+    date_created = models.DateTimeField(editable=False)
+    date_modified = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """
+        On save update timestamps
+        """
+        if not self.id:
+            self.date_created = timezone.now()
+        self.date_modified = timezone.now()
+        return super(Visit, self).save(*args, **kwargs)
