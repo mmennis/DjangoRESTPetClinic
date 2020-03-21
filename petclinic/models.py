@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 # Owner
 class Owner(models.Model):
     email = models.EmailField(unique=True)
@@ -19,7 +20,7 @@ class Owner(models.Model):
 
 # Specialty
 class Specialty(models.Model):
-    name: models.CharField(max_length=30, unique=True, null=False)
+    name = models.CharField(max_length=30, unique=True, null=False)
 
     def __str__(self):
         return self.name
@@ -33,7 +34,7 @@ class Vet(models.Model):
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)  
-    specialty = models.ForeignKey(Specialty, null=True, on_delete=models.SET_NULL)
+    specialty = models.ForeignKey(Specialty, null=True, on_delete=models.SET_NULL, related_name='vets')
 
     def full_name(self):
         return "%s %s" % (self.first_name, self.last_name)
@@ -53,8 +54,8 @@ class PetType(models.Model):
 class Pet(models.Model):
     name = models.CharField(max_length=30, blank=False)
     birth_date = models.DateField()
-    owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
-    pet_type = models.ForeignKey(PetType, null=True, on_delete=models.SET_NULL,)
+    owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets')
+    pet_type = models.ForeignKey(PetType, null=True, on_delete=models.SET_NULL, related_name='pets')
 
 
     def age(self):
@@ -70,6 +71,4 @@ class Pet(models.Model):
 class Visit(models.Model):
     visit_date = models.DateTimeField(auto_now=True)
     description = models.TextField(max_length=1000)
-    pet = models.ForeignKey(Pet, on_delete=models.CASCADE)
-
-
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='visits')

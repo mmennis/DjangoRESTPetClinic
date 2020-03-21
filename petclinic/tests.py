@@ -1,45 +1,17 @@
 import datetime
-from django.utils import timezone
+
 from django.test import TestCase
-from petclinic.models import Specialty, Vet, PetType, Pet, Owner, Visit
+from django.utils import timezone
 
-# Create your tests here.
-def create_specialty(specialty_name):
-    s = Specialty()
-    s.name = specialty_name
-    s.save()
-    return s
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.test_utils import *
 
-def create_pet_type(pet_type_name):
-    return PetType.objects.create(name=pet_type_name)
-
-def create_vet(email='test@example.com', first_name='First', 
-                last_name='Last', street_address='1234 Main St', 
-                city='San Jose', state='CA', telephone='408-555-1212'):
-    specialty = create_specialty('testing')
-    return Vet.objects.create(email=email, first_name=first_name, last_name=last_name, 
-                                street_address=street_address, telephone=telephone, 
-                                specialty=specialty)
-
-def create_owner(email='test@example.com', first_name='First', last_name='Last', 
-                    street_address='1234 Main St', city='San Jose', state='CA', 
-                    telephone='408-555-1212'):
-    return Owner.objects.create(email=email, first_name=first_name, last_name=last_name, 
-                                street_address=street_address, telephone=telephone)
-
-def create_pet(name='fido', owner=None, birth_date=None):
-    bd = (timezone.now() - datetime.timedelta(days=10)) if birth_date is None else birth_date
-    pt = create_pet_type('dog')
-    return Pet.objects.create(name=name, birth_date=bd, pet_type=pt, owner=owner)
-
-def create_visit(visit_date=timezone.now(), description='Visit description', pet=None):
-    return Visit.objects.create(visit_date=visit_date, description=description, pet=pet)
 
 class VetModelTest(TestCase):
 
     def test_should_create_a_vet(self):
         """
-        A vet should be created and persisted
+        A vet should be created
         """
         vet = create_vet()
         self.assertIsInstance(vet, Vet)
@@ -72,8 +44,8 @@ class PetModelTest(TestCase):
         Pet should be written to database
         """
         p = create_pet(owner=self.owner)
-        self.assertIn(p, self.owner.pet_set.all())
-        self.assertEqual(self.owner.pet_set.count(), 1)
+        self.assertIn(p, self.owner.pets.all())
+        self.assertEqual(self.owner.pets.count(), 1)
         self.assertIn(p, Pet.objects.all())
 
     def test_should_report_pets_age(self):
@@ -87,7 +59,7 @@ class PetModelTest(TestCase):
         """
         p = create_pet(owner = self.owner)
         v = create_visit(pet=p)
-        self.assertIn(v, p.visit_set.all())
+        self.assertIn(v, p.visits.all())
 
 
 class OwnerModelTest(TestCase):
@@ -126,5 +98,4 @@ class VisitModelTest(TestCase):
         a visit should appear in a pets list of visits
         """
         v = create_visit(pet=self.pet)
-        self.assertIn(v, self.pet.visit_set.all())
-
+        self.assertIn(v, self.pet.visits.all())
