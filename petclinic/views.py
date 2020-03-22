@@ -41,7 +41,7 @@ class OwnerDetail(APIView):
 
     def put(self, request, pk, format=None):
         owner = self.get_object(pk)
-        serializer = OwnerSerializer(owner, data=request.data)
+        serializer = OwnerSerializer(owner, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -85,7 +85,7 @@ class VetDetail(APIView):
 
     def put(self, request, pk, format=None):
         vet = self.get_object(pk)
-        serializer = VetSerializer(vet, data=request.data)
+        serializer = VetSerializer(vet, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -95,3 +95,5 @@ class VetDetail(APIView):
         vet = self.get_object(pk)
         vet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)    
+
+# class SpecialtyList(APIView):
