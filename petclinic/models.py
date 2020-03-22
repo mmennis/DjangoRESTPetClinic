@@ -12,7 +12,7 @@ class Owner(models.Model):
     state = models.CharField(max_length=50)
     telephone = models.CharField(max_length=100)
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
@@ -33,7 +33,7 @@ class Owner(models.Model):
 class Specialty(models.Model):
     name = models.CharField(max_length=30, unique=True, null=False)
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
@@ -58,7 +58,7 @@ class Vet(models.Model):
     telephone = models.CharField(max_length=100)  
     specialty = models.ForeignKey(Specialty, null=True, on_delete=models.SET_NULL, related_name='vets')
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
@@ -80,7 +80,7 @@ class Vet(models.Model):
 class PetType(models.Model):
     name = models.CharField(max_length=32)
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
@@ -101,7 +101,7 @@ class Pet(models.Model):
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='pets')
     pet_type = models.ForeignKey(PetType, null=True, on_delete=models.SET_NULL, related_name='pets')
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
@@ -128,7 +128,7 @@ class Visit(models.Model):
     description = models.TextField(max_length=1000)
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='visits')
     date_created = models.DateTimeField(editable=False)
-    date_modified = models.DateTimeField()
+    date_modified = models.DateTimeField(default=timezone.now)
 
     def save(self, *args, **kwargs):
         """
