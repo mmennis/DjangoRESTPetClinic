@@ -3,9 +3,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from petclinic.models import Owner, Pet, Vet, Visit
+from petclinic.models import Owner, Pet, Vet, Visit, Specialty, PetType
 from petclinic.serializers import (OwnerSerializer, PetSerializer,
-                                   VetSerializer, VisitSerializer)
+                                   VetSerializer, VisitSerializer, SpecialtySerializer)
 
 
 class OwnerList(APIView):
@@ -96,4 +96,45 @@ class VetDetail(APIView):
         vet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)    
 
-# class SpecialtyList(APIView):
+class SpecialtyList(APIView):
+    """
+    List all specialties
+    """
+    def get(self, request, format=None):
+        specialties = Specialty.objects.all()
+        serializer = SpecialtySerializer(specialties, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = SpecialtySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SpecialtyDetail(APIView):
+    """
+    Retrieve, update a speciality (delete blocked)
+    """
+    def get_object(self, pk):
+        try:
+            return Specialty.objects.get(pk=pk)
+        except Specialty.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        specialty = self.get_object(pk)
+        serializer = SpecialtySerializer(specialty)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        specialty = self.get_object(pk)
+        serializer = SpecialtySerializer(specialty, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.erors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        data = { 'message': 'Unsupported operation'}
+        return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)

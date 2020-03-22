@@ -2,7 +2,6 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from petclinic.models import Owner
 from petclinic.test_utils import *
 
 
@@ -115,7 +114,6 @@ class VetDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['id'], self.vet.id)
 
-
     def test_update_vet_by_pk(self):
         """
         Ensure a vet can be updated in DB
@@ -135,3 +133,56 @@ class VetDetailTests(APITestCase):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Vet.objects.count(), 0)
+
+class SpecialtyListTests(APITestCase):
+    """
+    Retrieve or create Specialties
+    """
+
+    def setUp(self):
+        self.specialty = create_specialty('unit-testing')
+        self.url = reverse('specialty-list')
+
+    def test_retrieve_all_specialties(self):
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj[0]['name'], self.specialty.name)
+
+    def test_create_specialty(self):
+        spec_data = { 'name': 'spec-testing'}
+        response = self.client.post(self.url, spec_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(ret_obj['name'], spec_data['name'])
+
+class SpecialtyDetailTests(APITestCase):
+
+    def setUp(self):
+        self.specialty = create_specialty('unit-testing')
+        self.url = reverse('specialty-detail', args=[self.specialty.id])
+
+    def test_retrieve_by_pk(self):
+        """
+        Ensure specialty can be retrieved by PK
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_by_pk(self):
+        """
+        Ensure specialty object can be updated
+        """
+        spec_data = { 'name': 'updated-specialty'}
+        response = self.client.put(self.url, spec_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['name'], spec_data['name'])
+
+    def test_delete_by_pk(self):
+        """
+        Ensure that a specialty cannot be deleted
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
