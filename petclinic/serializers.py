@@ -2,6 +2,12 @@ from rest_framework import serializers
 
 from petclinic.models import Owner, Pet, PetType, Vet, Visit, Specialty
 
+class PetTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PetType
+        fields = ['id', 'name']
+        read_only_fields = ('date_created', 'date_modified')
+
 class SpecialtySerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialty
@@ -11,7 +17,7 @@ class SpecialtySerializer(serializers.ModelSerializer):
 class VisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
-        fields = ['id', 'visit_date', 'description']
+        fields = ['id', 'visit_date', 'description', 'pet']
         read_only_fields = ('date_created', 'date_modified')
 
 class PetSerializer(serializers.ModelSerializer):
@@ -19,7 +25,7 @@ class PetSerializer(serializers.ModelSerializer):
     pet_type = serializers.PrimaryKeyRelatedField(queryset=PetType.objects.all())
     class Meta:
         model = Pet
-        fields = ['id', 'name', 'pet_type', 'visits']
+        fields = ['id', 'name', 'pet_type', 'visits', 'birth_date', 'owner']
         read_only_fields = ('date_created', 'date_modified')
 
 class OwnerSerializer(serializers.ModelSerializer):

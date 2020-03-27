@@ -20,8 +20,9 @@ def create_pet_type(pet_type_name):
 
 def create_vet(email='test@example.com', first_name='First', 
                 last_name='Last', street_address='1234 Main St', 
-                city='San Jose', state='CA', telephone='408-555-1212'):
-    specialty = create_specialty('testing')
+                city='San Jose', state='CA', telephone='408-555-1212',
+                specialty=None):
+    specialty = create_specialty('testing') if specialty is None else specialty
     return Vet.objects.create(email=email, first_name=first_name, last_name=last_name, 
                                 street_address=street_address, telephone=telephone, 
                                 specialty=specialty)
@@ -33,7 +34,7 @@ def create_owner(email='test@example.com', first_name='First', last_name='Last',
                                 street_address=street_address, telephone=telephone)
 
 def create_pet(name='fido', owner=None, birth_date=None):
-    bd = (timezone.now() - datetime.timedelta(days=10)) if birth_date is None else birth_date
+    bd = (timezone.now() - datetime.timedelta(days=10)).date() if birth_date is None else birth_date
     pt = create_pet_type('dog')
     return Pet.objects.create(name=name, birth_date=bd, pet_type=pt, owner=owner)
 
