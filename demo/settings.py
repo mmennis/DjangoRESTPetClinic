@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'coverage',
+    'faker',
     'petclinic.apps.PetclinicConfig',
     'django.contrib.admin',
     'django.contrib.auth',
