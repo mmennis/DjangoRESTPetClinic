@@ -186,3 +186,51 @@ class SpecialtyDetailTests(APITestCase):
         """
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class PetTypeListTests(APITestCase):
+
+    def setUp(self):
+        self.pet_type = create_pet_type('test-pet-type')
+        self.url = reverse('pet-type-list')
+
+    def test_retrieve_all_pet_types(self):
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_pet_type(self):
+        pet_type_data = { 'name': 'pet-type-testing'}
+        response = self.client.post(self.url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)  
+
+class PetTypeDetailTests(APITestCase):
+
+    def setUp(self):
+        self.pet_type = create_pet_type(pet_type_name='eagle')
+        self.url = reverse('pet-type-detail', args=[self.pet_type.id])
+
+    def test_retrieve_by_pk(self):
+        """
+        Ensure pet type can be retireveed by PK
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_by_pk(self):
+        """
+        Ensure pet type can be updated 
+        """
+        pet_type_data = { 'name': 'updated-pet-type'}
+        response = self.client.put(self.url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['name'], pet_type_data['name'])
+
+    def test_delete_by_pk(self):
+        """
+        Ensure that a pet type cannot be deleted from API
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
