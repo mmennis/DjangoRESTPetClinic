@@ -14,6 +14,16 @@ services:
       - ..:/app/
     depends_on: 
     - db
+  population:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    command: python manage.py populate_db --owners 300 --vets 100
+    volumes: 
+      - ..:/app/
+    depends_on: 
+      - db
+      - migration
   test:
     build: 
       context: ../
@@ -34,5 +44,7 @@ services:
     ports: 
       - "8000:8000"
     depends_on: 
-      - migration
       - db
+      - migration
+      - population
+      
