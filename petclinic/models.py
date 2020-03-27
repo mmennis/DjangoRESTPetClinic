@@ -124,7 +124,7 @@ class Pet(models.Model):
 
 # Visit
 class Visit(models.Model):
-    visit_date = models.DateTimeField(auto_now=True)
+    visit_date = models.DateTimeField()
     description = models.TextField(max_length=1000)
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='visits')
     date_created = models.DateTimeField(editable=False)
