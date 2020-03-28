@@ -25,13 +25,14 @@ def create_vet(email='test@example.com', first_name='First',
     specialty = create_specialty('testing') if specialty is None else specialty
     return Vet.objects.create(email=email, first_name=first_name, last_name=last_name, 
                                 street_address=street_address, telephone=telephone, 
-                                specialty=specialty)
+                                specialty=specialty, city=city, state=state)
 
 def create_owner(email='test@example.com', first_name='First', last_name='Last', 
                     street_address='1234 Main St', city='San Jose', state='CA', 
                     telephone='408-555-1212'):
     return Owner.objects.create(email=email, first_name=first_name, last_name=last_name, 
-                                street_address=street_address, telephone=telephone)
+                                street_address=street_address, telephone=telephone, state=state,
+                                city=city)
 
 def create_pet(name='fido', owner=None, birth_date=None):
     bd = (timezone.now() - datetime.timedelta(days=10)).date() if birth_date is None else birth_date

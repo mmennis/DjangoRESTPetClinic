@@ -20,6 +20,14 @@ class OwnerListTests(APITestCase):
         self.assertEqual(Owner.objects.count(), 1)
         self.assertEqual(len(response.data), 1)
 
+    def test_retrieve_owners_filtered_by_state(self):
+        owner1 = create_owner(email='test_owner_ca@example.com', state='CA')
+        owner2 = create_owner(email='test_owner_tx@example.com', state='TX')
+        state_url = "%s?state=TX" % self.url
+        response = self.client.get(state_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
     def test_create_owner(self):
         """
         Ensure that an owner can be created
@@ -70,7 +78,8 @@ class OwnerDetailTests(APITestCase):
 class VetListTests(APITestCase):
 
     def setUp(self):
-        self.vet = create_vet(email='test-vet-view@example.com')
+        self.specialty = create_specialty('testing-filters')
+        self.vet = create_vet(email='test-vet-view@example.com', specialty=self.specialty)
         self.url=reverse('vet-list')
 
     def test_retrieve_vets(self):
@@ -79,6 +88,14 @@ class VetListTests(APITestCase):
         """
         response = self.client.get(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_vets_filtered_by_state(self):
+        vet1 = create_vet(email='test_vet_ca@example.com', state='CA', specialty=self.specialty)
+        vet2 = create_vet(email='test_vet_tx@example.com', state='TX', specialty=self.specialty)
+        state_url = "%s?state=TX" % self.url
+        response = self.client.get(state_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
 
     def test_create_vet(self):
         """

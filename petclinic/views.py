@@ -15,6 +15,9 @@ class OwnerList(APIView):
     """
     def get(self, request, format=None):
         owners = Owner.objects.all()
+        state = request.query_params.get('state', None)
+        if state is not None:
+            owners = owners.filter(state=state)
         serializer = OwnerSerializer(owners, many=True)
         return Response(serializer.data)
 
@@ -59,6 +62,9 @@ class VetList(APIView):
     """
     def get(self, request, format=None):
         vets = Vet.objects.all()
+        state = request.query_params.get('state', None)
+        if state is not None:
+            vets = vets.filter(state=state)
         serializer = VetSerializer(vets, many=True)
         return Response(serializer.data)
 
