@@ -78,7 +78,7 @@ class Vet(models.Model):
     
 # Pet Type
 class PetType(models.Model):
-    name = models.CharField(max_length=32)
+    name = models.CharField(max_length=32, unique=True)
     date_created = models.DateTimeField(editable=False)
     date_modified = models.DateTimeField(default=timezone.now)
 

@@ -58,8 +58,7 @@ class Command(BaseCommand):
 
     def create_pet_types(self):
         pet_type_list = ['bird','cat','dog','fish','hamster','horse','iguana',        
-                        'lizard','mouse','pig','rabbit','rat','snake','snake',
-                        'tortoise','turtle']
+                        'lizard','mouse','pig','rabbit','rat','snake','tortoise','turtle']
         self.pet_types = []
         for pt in pet_type_list:
             pet_type = PetType.objects.create(name=pt)

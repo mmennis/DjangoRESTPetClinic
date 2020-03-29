@@ -34,10 +34,9 @@ def create_owner(email='test@example.com', first_name='First', last_name='Last',
                                 street_address=street_address, telephone=telephone, state=state,
                                 city=city)
 
-def create_pet(name='fido', owner=None, birth_date=None):
+def create_pet(name='fido', owner=None, birth_date=None, pet_type=None):
     bd = (timezone.now() - datetime.timedelta(days=10)).date() if birth_date is None else birth_date
-    pt = create_pet_type('dog')
-    return Pet.objects.create(name=name, birth_date=bd, pet_type=pt, owner=owner)
+    return Pet.objects.create(name=name, birth_date=bd, pet_type=pet_type, owner=owner)
 
 def create_visit(visit_date=timezone.now(), description='Visit description', pet=None):
     return Visit.objects.create(visit_date=visit_date, description=description, pet=pet)
