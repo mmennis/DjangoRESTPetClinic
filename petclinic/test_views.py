@@ -42,11 +42,65 @@ class OwnerListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(own_obj['email'], 'test-new-owner@example.com')
 
+    def test_create_owner_fails_if_email_already_exists(self):
+        """
+        Ensure that an owner cannot be created if email already exists
+        """
+        owner = create_owner(email='test-new-owner@example.com')
+        owner_data = { 'email': 'test-new-owner@example.com', 'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212', 
+                        }
+        response = self.client.post(self.url, owner_data, format='json')
+        own_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(own_obj['email'][0], 'owner with this email already exists.')
+
+    def test_owner_create_fails_for_required_email_field(self):
+        """
+        Ensure that an owner will not be created if a required field is missing
+        """
+        owner_data = { 'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212', 
+                        }
+        response = self.client.post(self.url, owner_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertTrue(ret_obj['email'][0] == 'This field is required.')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_owner_create_fails_if_last_name_is_missing(self):
+        """
+        Ensure that an owner cannot be created if last name is missing
+        """
+        owner_data = { 'email': 'test-new-owner@example.com',  
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212', 
+                        }
+        response = self.client.post(self.url, owner_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ret_obj['last_name'][0], 'This field is required.')
+
+    def test_create_owner_fails_for_invalid_email_address(self):
+        """
+        Ensure that an owner can be created
+        """
+        owner_data = { 'email': 'test-new-owner', 'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212', 
+                        }
+        response = self.client.post(self.url, owner_data, format='json')
+        own_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(own_obj['email'][0], 'Enter a valid email address.')
+
 class OwnerDetailTests(APITestCase):
 
     def setUp(self):
         self.owner = create_owner(email='test_owner_view@example.com')
         self.url = reverse('owner-detail', args=[self.owner.id])
+        self.bad_url = reverse('owner-detail', args=[10000])
 
     def test_retrieve_owner_by_pk(self):
         """
@@ -56,7 +110,14 @@ class OwnerDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK) 
         ret_obj = json.loads(response.content)
         self.assertEqual(ret_obj['email'], self.owner.email)
- 
+
+    def test_retrieve_owner_by_pk_fails(self):
+        """
+        Ensure that NOT FOUND status returned for bad id
+        """
+        response = self.client.get(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND) 
+
     def test_update_owner_by_pk(self):
         """
         Ensure an owner can be updated
@@ -68,6 +129,26 @@ class OwnerDetailTests(APITestCase):
         self.assertEqual(ret_obj['last_name'], o_data['last_name'])
         self.assertEqual(ret_obj['first_name'], o_data['first_name'])
 
+    def test_update_owner_by_pk_fails_invalid_email(self):
+        """
+        Ensure an owner update fails if email invalid
+        """
+        o_data = { 'email': 'change_fname', 'last_name': 'changed_lname'}
+        response = self.client.put(self.url, o_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)        
+        self.assertEqual(ret_obj['email'][0], 'Enter a valid email address.')
+
+    def test_update_owner_by_pk_fails_for_bad_ID(self):
+        """
+        Ensure an owner can be updated
+        """
+        o_data = { 'first_name': 'change_fname', 'last_name': 'changed_lname'}
+        response = self.client.put(self.bad_url, o_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)        
+
     def test_delete_owner_by_pk(self):
         """
         Ensure that an owner can be removed from the database
@@ -75,6 +156,16 @@ class OwnerDetailTests(APITestCase):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Owner.objects.count(), 0)
+
+    def test_delete_owner_by_pk_fails_for_bad_ID(self):
+        """
+        Ensure that an owner delete fails for bad ID
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Owner.objects.count(), 1)
 
 class VetListTests(APITestCase):
 
@@ -114,6 +205,63 @@ class VetListTests(APITestCase):
         self.assertEqual(sp.name, specialty.name)
         self.assertEqual(vet_obj['email'], 'test-new-owner@example.com')
 
+    def test_create_vet_fails_email_already_exists(self):
+        """
+        Ensure a new vet cannot be created if email already exists
+        """
+        owner = create_vet(email='test-new-owner@example.com')
+        specialty = create_specialty('jogging')
+        vet_data = {'email': 'test-new-owner@example.com', 'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212',
+                        'specialty': specialty.id}
+        response = self.client.post(self.url, vet_data, format='json')
+        vet_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(vet_obj['email'][0], 'vet with this email already exists.')
+
+    def test_create_vet_fails_for_missing_email(self):
+        """
+        Ensure a new vet cannot be created without an email
+        """
+        specialty = create_specialty('jogging')
+        vet_data = {'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212',
+                        'specialty': specialty.id}
+        response = self.client.post(self.url, vet_data, format='json')
+        vet_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(vet_obj['email'][0], 'This field is required.')
+
+    def test_create_vet_fails_for_invalid_email(self):
+        """
+        Ensure a new vet cannot be created without an email
+        """
+        specialty = create_specialty('jogging')
+        vet_data = {'last_name': 'Last', 'email': 'hello world',
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212',
+                        'specialty': specialty.id}
+        response = self.client.post(self.url, vet_data, format='json')
+        vet_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(vet_obj['email'][0], 'Enter a valid email address.')
+
+    def test_create_vet_fails_for_missing_field(self):
+        """
+        Ensure a new vet cannot be created without last name
+        """
+        specialty = create_specialty('jogging')
+        vet_data = {'email': 'test-new-owner@example.com',
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212',
+                        'specialty': specialty.id}
+        response = self.client.post(self.url, vet_data, format='json')
+        vet_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(vet_obj['last_name'][0], 'This field is required.')
+
 class VetDetailTests(APITestCase):
 
     def setUp(self):
@@ -122,6 +270,7 @@ class VetDetailTests(APITestCase):
         self.vet.specialty = self.specialty
         self.vet.save()
         self.url = reverse('vet-detail', args=[self.vet.id])
+        self.bad_url = reverse('vet-detail', args=[10000])
 
     def test_retrieve_vet_by_pk(self):
         """
@@ -131,6 +280,15 @@ class VetDetailTests(APITestCase):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['id'], self.vet.id)
+
+    def test_retrieve_vet_by_pk_fails_with_bad_ID(self):
+        """
+        Ensure a vet retrieval fails as expected with bad ID
+        """
+        response = self.client.get(self.bad_url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
 
     def test_update_vet_by_pk(self):
         """
@@ -144,6 +302,26 @@ class VetDetailTests(APITestCase):
         self.assertEqual(ret_obj['city'], v_data['city'])
         self.assertEqual(ret_obj['state'], v_data['state'])
 
+    def test_update_vet_by_pk_fails_with_invalid_email(self):
+        """
+        Ensure a vet update fails if email invalid
+        """
+        v_data = { 'email': 'Mountain View', 'state': 'CA'}
+        response = self.client.put(self.url, v_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ret_obj['email'][0], 'Enter a valid email address.')
+
+    def test_update_vet_by_pk_falis_with_bad_ID(self):
+        """
+        Ensure a vet update fails as expected with bad ID
+        """
+        v_data = { 'city': 'Mountain View', 'state': 'CA'}
+        response = self.client.put(self.bad_url, v_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
     def test_delete_vet_by_pk(self):
         """
         Ensure a vet can be removed from DB
@@ -151,6 +329,16 @@ class VetDetailTests(APITestCase):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Vet.objects.count(), 0)
+
+    def test_delete_vet_by_pk_fails_with_bad_ID(self):
+        """
+        Ensure a vet delete fails as expected wit bad ID
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(Vet.objects.count(), 1)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
 
 class SpecialtyListTests(APITestCase):
     """
@@ -168,11 +356,35 @@ class SpecialtyListTests(APITestCase):
         self.assertEqual(ret_obj[0]['name'], self.specialty.name)
 
     def test_create_specialty(self):
+        """
+        Ensure a specialty can be created
+        """
         spec_data = { 'name': 'spec-testing'}
         response = self.client.post(self.url, spec_data, format='json')
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ret_obj['name'], spec_data['name'])
+
+    def test_create_specialty_fails_invalid_fields(self):
+        """
+        Ensure specialty createion fails if name field is missing
+        """
+        spec_data = { 'invalid': 'spec-testing'}
+        response = self.client.post(self.url, spec_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ret_obj['name'][0], 'This field is required.')
+
+    def test_create_specialty_fails_already_exists(self):
+        """
+        Ensure specialty creation fails if specialty already exists
+        """
+        specialty = create_specialty('spec-testing')
+        spec_data = { 'name': 'spec-testing'}
+        response = self.client.post(self.url, spec_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ret_obj['name'][0], 'specialty with this name already exists.')
 
 class SpecialtyDetailTests(APITestCase):
 
@@ -212,15 +424,42 @@ class PetTypeListTests(APITestCase):
         self.url = reverse('pet-type-list')
 
     def test_retrieve_all_pet_types(self):
+        """
+        Ensure all pet types can be retieved
+        """
         response = self.client.get(self.url, format='json')
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_pet_type(self):
+        """
+        Ensure pet type can be created
+        """
         pet_type_data = { 'name': 'pet-type-testing'}
         response = self.client.post(self.url, pet_type_data, format='json')
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)  
+
+    def test_create_pet_type_fails_if_already_exists(self):
+        """
+        Ensure pet type creation fails if already exists
+        """
+        pet_type = create_pet_type('pet-type-testing')
+        pet_type_data = { 'name': 'pet-type-testing'}
+        response = self.client.post(self.url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['name'][0], 'pet type with this name already exists.')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
+
+    def test_create_pet_type_fails_if_invalid_fields(self):
+        """
+        Ensure pet type creation fails if name field missing
+        """
+        pet_type_data = { 'bad_field': 'pet-type-testing'}
+        response = self.client.post(self.url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['name'][0], 'This field is required.')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
 
 class PetTypeDetailTests(APITestCase):
 
