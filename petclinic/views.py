@@ -198,7 +198,6 @@ class OwnerPetList(generics.ListCreateAPIView):
         return self.queryset.filter(owner=owner_pk)
 
     def pre_save(self, obj):
-        print(obj)
         obj.owner = self.kwargs['owner_pk']
 
     def create(self, request, *args, **kwargs):
@@ -218,3 +217,31 @@ class OwnerPetList(generics.ListCreateAPIView):
         output_serializer = PetSerializer(results, many=True)
         data = output_serializer.data[:]
         return Response(data, status=status.HTTP_201_CREATED)
+
+class PetVisitList(generics.ListCreateAPIView):
+    queryset = Visit.objects.all()
+    serializer_class = VisitSerializer
+
+    def get_queryset(self):
+        pet_pk = self.kwargs['pet_pk']
+        return self.queryset.filter(pet=pet_pk)
+
+    def pre_save(self, obj):
+        obj.pet = self.kwargs['pet_pk']
+
+    def create(self, request, *args, **kwargs):
+        pet_id = self.kwargs['pet_pk']
+        for visit_data in request.data:
+            visit_data['pet'] = pet_id
+        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+        serializer.is_valid(raise_exception=True)
+        visits_created = []
+        for visit_data in request.data:
+            visit_data['pet'] = Pet.objects.get(pk=pet_id)
+            visit = Visit.objects.create(**visit_data)
+            visits_created.append(visit.id)
+        results = Visit.objects.filter(id__in=visits_created)
+        output_serializer = VisitSerializer(results, many=True)
+        data = output_serializer.data[:]
+        return Response(data, status=status.HTTP_201_CREATED)
+

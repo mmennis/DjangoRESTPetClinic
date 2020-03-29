@@ -292,3 +292,42 @@ class OwnerPetListTests(APITestCase):
         self.assertEqual(ret_obj[1]['name'], 'pet2')
         self.assertEqual(ret_obj[0]['owner'], self.owner.id)
         self.assertEqual(ret_obj[1]['owner'], self.owner.id)
+
+class PetVisitListTests(APITestCase):
+    def setUp(self):
+        self.owner = create_owner()
+        self.pet_type = create_pet_type('test-pet-type')
+        self.pet = create_pet(owner=self.owner)
+        self.visits = [
+            create_visit(pet=self.pet),
+            create_visit(pet=self.pet)
+        ]
+        self.url = reverse('pet-visit-list', args=[self.pet.id])
+    
+    def test_retrieve_all_visits_for_pet(self):
+        """
+        Ensure vists can be retrieved for a pet
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(ret_obj), 2)
+        self.assertEqual(ret_obj[0]['pet'], self.pet.id)
+        self.assertEqual(ret_obj[1]['pet'], self.pet.id)
+
+    def test_create_new_visits_for_pet(self):
+        """
+        Ensure that you can add a list of vists to a pet
+        """
+        visits_data = [
+            { 'visit_date': timezone.now(), 'description': 'test' },
+            { 'visit_date': timezone.now(), 'description': 'test' }
+        ]
+        response = self.client.post(self.url, visits_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(ret_obj), 2)
+        self.assertEqual(ret_obj[0]['pet'], self.pet.id)
+        self.assertEqual(ret_obj[1]['pet'], self.pet.id)
+
+
