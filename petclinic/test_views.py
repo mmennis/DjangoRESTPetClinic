@@ -466,6 +466,7 @@ class PetTypeDetailTests(APITestCase):
     def setUp(self):
         self.pet_type = create_pet_type(pet_type_name='eagle')
         self.url = reverse('pet-type-detail', args=[self.pet_type.id])
+        self.bad_url = reverse('pet-type-detail', args=[10000])
 
     def test_retrieve_by_pk(self):
         """
@@ -475,6 +476,15 @@ class PetTypeDetailTests(APITestCase):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['id'], self.pet_type.id)
+
+    def test_retrieve_by_pk_fails_bad_ID(self):
+        """
+        Ensure pet type retrieveal fails as expected for bad ID
+        """
+        response = self.client.get(self.bad_url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
 
     def test_update_by_pk(self):
         """
@@ -486,6 +496,27 @@ class PetTypeDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['name'], pet_type_data['name'])
 
+    def test_update_by_pk_fails_already_exists(self):
+        """
+        Ensure pet type update fails if pet type with name already exists
+        """
+        pet_type = create_pet_type('updated-pet-type')
+        pet_type_data = { 'name': 'updated-pet-type'}
+        response = self.client.put(self.url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(ret_obj['name'][0], 'pet type with this name already exists.')
+
+    def test_update_by_pk_fails_bad_ID(self):
+        """
+        Ensure pet type can be updated 
+        """
+        pet_type_data = { 'name': 'updated-pet-type'}
+        response = self.client.put(self.bad_url, pet_type_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
     def test_delete_by_pk(self):
         """
         Ensure that a pet type cannot be deleted from API
@@ -494,6 +525,7 @@ class PetTypeDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class OwnerPetListTests(APITestCase):
+    
     def setUp(self):
         self.owner = create_owner(email='test-owner-pet-list@example.com')
         self.pet_type = create_pet_type('test-pet-type')
