@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+from django.utils import timezone
 
 from petclinic.test_utils import *
 
@@ -234,6 +235,7 @@ class PetTypeDetailTests(APITestCase):
         response = self.client.get(self.url, format='json')
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['id'], self.pet_type.id)
 
     def test_update_by_pk(self):
         """
@@ -251,3 +253,42 @@ class PetTypeDetailTests(APITestCase):
         """
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class OwnerPetListTests(APITestCase):
+    def setUp(self):
+        self.owner = create_owner(email='test-owner-pet-list@example.com')
+        self.pet_type = create_pet_type('test-pet-type')
+        self.pets = [ 
+            create_pet(owner=self.owner, name='pet1'),
+            create_pet(owner=self.owner, name='pet2')
+        ]
+        self.url = reverse('owner-pet-list', args=[self.owner.id])
+
+    def test_retrieve_all_pets_for_owner(self):
+        """
+        Ensure pets can be retrieved for a given owner
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(ret_obj), 2)
+        self.assertEqual(ret_obj[0]['owner'], self.owner.id)
+        self.assertEqual(ret_obj[1]['owner'], self.owner.id)
+
+    def test_create_new_pets_for_owner(self):
+        """
+        Ensure pets can be added to an owner
+        """
+        pets_data = [
+            { 'name': 'pet1', 'pet_type': self.pet_type.id, 'birth_date': timezone.now().date() },
+            { 'name': 'pet2', 'pet_type': self.pet_type.id, 'birth_date': timezone.now().date() }
+        ]
+        response = self.client.post(self.url, pets_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(ret_obj), 2)
+        self.assertEqual(ret_obj[0]['pet_type'], self.pet_type.id)
+        self.assertEqual(ret_obj[0]['name'], 'pet1')
+        self.assertEqual(ret_obj[1]['name'], 'pet2')
+        self.assertEqual(ret_obj[0]['owner'], self.owner.id)
+        self.assertEqual(ret_obj[1]['owner'], self.owner.id)

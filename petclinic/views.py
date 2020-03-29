@@ -1,5 +1,5 @@
 from django.http import Http404
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -188,3 +188,33 @@ class PetTypeDetail(APIView):
     def delete(self, request, pk, format=None):
         data = { 'message': 'Unsupported operation'}
         return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+class OwnerPetList(generics.ListCreateAPIView):
+    queryset = Pet.objects.all()
+    serializer_class = PetSerializer
+
+    def get_queryset(self):
+        owner_pk = self.kwargs['owner_pk']
+        return self.queryset.filter(owner=owner_pk)
+
+    def pre_save(self, obj):
+        print(obj)
+        obj.owner = self.kwargs['owner_pk']
+
+    def create(self, request, *args, **kwargs):
+        owner_id = self.kwargs['owner_pk']
+        for pet_data in request.data:
+            pet_data['owner'] = owner_id
+        serializer = self.get_serializer(data=request.data, many=isinstance(request.data, list))
+        serializer.is_valid(raise_exception=True)
+        pets_created = []
+        for pet_data in request.data:
+            pet_data['owner'] = Owner.objects.get(pk=owner_id)
+            pet_data['pet_type'] = PetType.objects.get(pk=pet_data['pet_type'])
+            pet = Pet(**pet_data)
+            pet.save()
+            pets_created.append(pet.id)
+        results = Pet.objects.filter(id__in=pets_created)
+        output_serializer = PetSerializer(results, many=True)
+        data = output_serializer.data[:]
+        return Response(data, status=status.HTTP_201_CREATED)
