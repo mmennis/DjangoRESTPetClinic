@@ -525,7 +525,7 @@ class PetTypeDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class OwnerPetListTests(APITestCase):
-    
+
     def setUp(self):
         self.owner = create_owner(email='test-owner-pet-list@example.com')
         self.pet_type = create_pet_type('test-pet-type')
@@ -601,4 +601,139 @@ class PetVisitListTests(APITestCase):
         self.assertEqual(ret_obj[0]['pet'], self.pet.id)
         self.assertEqual(ret_obj[1]['pet'], self.pet.id)
 
+class PetDetailTests(APITestCase):
 
+    def setUp(self):
+        self.owner = create_owner(email='test-pet-detail@example.com')
+        self.pet_type = create_pet_type('testing-pet-detail')
+        self.pet = create_pet(owner=self.owner, name='fido', pet_type=self.pet_type)
+        self.url = reverse('pet-detail', args=[self.pet.id])
+        self.bad_url = reverse('pet-detail', args=[10000])
+
+    def test_retrieve_pet_by_pk(self):
+        """
+        Ensure a pet can be retrieved by ID
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['name'], 'fido')
+
+    def test_retrieve_pet_by_pk_fails_bad_ID(self):
+        """
+        Ensure pet retrieval fails as expected for bad ID
+        """
+        response = self.client.get(self.bad_url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+    def test_update_pet_by_pk(self):
+        """
+        Ensure pet update by ID succeeds
+        """
+        pet_type = create_pet_type('updated-pet-type')
+        pet_data = {
+            'name': 'rover', 'pet_type': pet_type.id
+        }
+        response = self.client.put(self.url, pet_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['name'], 'rover')
+        self.assertEqual(ret_obj['pet_type'], pet_type.id)
+
+    def test_update_pet_by_pk_fails_bad_ID(self):
+        """
+        Ensure pet update fails as expected with bad ID
+        """
+        pet_data = {
+            'name': 'rover'
+        }
+        response = self.client.put(self.bad_url, pet_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+    def test_delete_pet_by_pk(self):
+        """
+        Ensure pet can be deleted
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Pet.objects.count(), 0)
+
+    def test_delete_pet_by_pk_fails_for_bad_ID(self):
+        """
+        Ensure that delete fails as expected for bad ID
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+class VisitDetailTests(APITestCase):
+
+    def setUp(self):
+        self.owner = create_owner()
+        self.pet_type = create_pet_type('testing-visit')
+        self.pet = create_pet(owner=self.owner, pet_type=self.pet_type)
+        self.visit = create_visit(pet=self.pet)
+        self.url = reverse('visit-detail', args=[self.visit.id])
+        self.bad_url = reverse('visit-detail', args=[10000])
+
+    def test_retrieve_visit_by_pk(self):
+        """
+        Retrieve visit by ID
+        """
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['pet'], self.pet.id)
+
+    def test_retrieve_visit_by_pk_fails_bad_ID(self):
+        """
+        Retrieve visit fails as expected for bad ID
+        """
+        response = self.client.get(self.bad_url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+    def test_update_visit_by_pk(self):
+        """
+        Ensure a visit can be updaetd with ID
+        """
+        visit_data = {
+            'description': 'new description'
+        }
+        response = self.client.put(self.url, visit_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['description'], 'new description')
+
+    def test_update_visit_by_pk_fails_with_bad_data(self):
+        """
+        Ensure a visit cannot be updaetd with bad date info
+        """
+        visit_data = {
+            'visit_date': 'new description'
+        }
+        response = self.client.put(self.url, visit_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(ret_obj['visit_date'][0].startswith('Datetime has wrong format.'))
+
+    def test_delete_visit_by_pk(self):
+        """
+        Ensure a visit can be deleted by ID
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Visit.objects.count(), 0)
+
+    def test_delete_visit_by_pk_fails_for_bad_ID(self):
+        """
+        Ensure that deleteion of visit with bad ID fails as expected
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

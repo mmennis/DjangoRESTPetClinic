@@ -112,7 +112,7 @@ class Pet(models.Model):
         self.date_modified = timezone.now()
         return super(Pet, self).save(*args, **kwargs)
 
-
+    # FIXME
     def age(self):
         """
         return a timedelta object for curent age
@@ -120,7 +120,8 @@ class Pet(models.Model):
         return timezone.now() - self.birth_date
 
     def __str__(self):
-        return ("%s aged ")
+        # return ("%s aged %s" % (self.name, self.age().years()))
+        return self.name
 
 # Visit
 class Visit(models.Model):
