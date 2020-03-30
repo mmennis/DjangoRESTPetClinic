@@ -1,12 +1,12 @@
 from django.http import Http404
-from rest_framework import status, generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from petclinic.models import Owner, Pet, Vet, Visit, Specialty, PetType
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
 from petclinic.serializers import (OwnerSerializer, PetSerializer,
-                                   VetSerializer, VisitSerializer, 
-                                   SpecialtySerializer, PetTypeSerializer)
+                                   PetTypeSerializer, SpecialtySerializer,
+                                   VetSerializer, VisitSerializer)
 
 
 class OwnerList(APIView):

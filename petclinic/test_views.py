@@ -1,7 +1,7 @@
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.utils import timezone
 
 from petclinic.test_utils import *
 

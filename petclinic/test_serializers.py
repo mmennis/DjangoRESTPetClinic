@@ -1,8 +1,10 @@
 from django.test import TestCase
-from petclinic.models import Specialty, Vet, PetType, Pet, Owner, Visit
-from petclinic.test_utils import *
-from petclinic.serializers import *
 from rest_framework.renderers import JSONRenderer
+
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.serializers import *
+from petclinic.test_utils import *
+
 
 class OwnerSerializerTest(TestCase):
 
