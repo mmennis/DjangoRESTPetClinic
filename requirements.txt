@@ -4,6 +4,7 @@ coverage==5.0.4
 Django==3.0.4
 django-filter==2.2.0
 djangorestframework==3.11.0
+djangorestframework-simplejwt==4.4.0
 fake-factory==9999.9.9
 Faker==4.0.2
 isort==4.3.21
@@ -11,6 +12,7 @@ lazy-object-proxy==1.4.3
 Markdown==3.2.1
 mccabe==0.6.1
 psycopg2-binary==2.8.4
+PyJWT==1.7.1
 pylint==2.4.4
 pylint-django==2.0.14
 pylint-plugin-utils==0.6
