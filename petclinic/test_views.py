@@ -2,15 +2,34 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.state import User
 
 from petclinic.test_utils import *
 
+class BasePetClinicTest(APITestCase):
 
-class OwnerListTests(APITestCase):
+    def get_credentials(self):
+        username = 'test_user'
+        password = 'test_passwd_123'
+        user = User.objects.create_user(
+            username = username,
+            password = password
+        )
+        token_url = reverse('token_obtain_pair')
+        response = self.client.post(token_url, data = {
+            User.USERNAME_FIELD: username,
+            'password': password,
+        },)
+        access_token = response.data['access']
+        return '{} {}'.format('Bearer', access_token)
+
+class OwnerListTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner(email='test_owner_view@example.com')
         self.url = reverse('owner-list')
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
+        
 
     def test_retrieve_owners(self):
         """
@@ -95,12 +114,13 @@ class OwnerListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(own_obj['email'][0], 'Enter a valid email address.')
 
-class OwnerDetailTests(APITestCase):
+class OwnerDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner(email='test_owner_view@example.com')
         self.url = reverse('owner-detail', args=[self.owner.id])
         self.bad_url = reverse('owner-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_owner_by_pk(self):
         """
@@ -167,12 +187,13 @@ class OwnerDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(Owner.objects.count(), 1)
 
-class VetListTests(APITestCase):
+class VetListTests(BasePetClinicTest):
 
     def setUp(self):
         self.specialty = create_specialty('testing-filters')
         self.vet = create_vet(email='test-vet-view@example.com', specialty=self.specialty)
         self.url=reverse('vet-list')
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_vets(self):
         """
@@ -262,7 +283,7 @@ class VetListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(vet_obj['last_name'][0], 'This field is required.')
 
-class VetDetailTests(APITestCase):
+class VetDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.specialty = create_specialty('dancing')
@@ -271,6 +292,7 @@ class VetDetailTests(APITestCase):
         self.vet.save()
         self.url = reverse('vet-detail', args=[self.vet.id])
         self.bad_url = reverse('vet-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_vet_by_pk(self):
         """
@@ -340,7 +362,7 @@ class VetDetailTests(APITestCase):
         self.assertEqual(Vet.objects.count(), 1)
         self.assertEqual(ret_obj['detail'], 'Not found.')
 
-class SpecialtyListTests(APITestCase):
+class SpecialtyListTests(BasePetClinicTest):
     """
     Retrieve or create Specialties
     """
@@ -348,6 +370,7 @@ class SpecialtyListTests(APITestCase):
     def setUp(self):
         self.specialty = create_specialty('unit-testing')
         self.url = reverse('specialty-list')
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_all_specialties(self):
         response = self.client.get(self.url, format='json')
@@ -386,11 +409,12 @@ class SpecialtyListTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(ret_obj['name'][0], 'specialty with this name already exists.')
 
-class SpecialtyDetailTests(APITestCase):
+class SpecialtyDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.specialty = create_specialty('unit-testing')
         self.url = reverse('specialty-detail', args=[self.specialty.id])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_by_pk(self):
         """
@@ -417,11 +441,12 @@ class SpecialtyDetailTests(APITestCase):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class PetTypeListTests(APITestCase):
+class PetTypeListTests(BasePetClinicTest):
 
     def setUp(self):
         self.pet_type = create_pet_type('test-pet-type')
         self.url = reverse('pet-type-list')
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_all_pet_types(self):
         """
@@ -461,12 +486,13 @@ class PetTypeListTests(APITestCase):
         self.assertEqual(ret_obj['name'][0], 'This field is required.')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)  
 
-class PetTypeDetailTests(APITestCase):
+class PetTypeDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.pet_type = create_pet_type(pet_type_name='eagle')
         self.url = reverse('pet-type-detail', args=[self.pet_type.id])
         self.bad_url = reverse('pet-type-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_by_pk(self):
         """
@@ -524,7 +550,7 @@ class PetTypeDetailTests(APITestCase):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-class OwnerPetListTests(APITestCase):
+class OwnerPetListTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner(email='test-owner-pet-list@example.com')
@@ -534,6 +560,7 @@ class OwnerPetListTests(APITestCase):
             create_pet(owner=self.owner, name='pet2')
         ]
         self.url = reverse('owner-pet-list', args=[self.owner.id])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_all_pets_for_owner(self):
         """
@@ -564,7 +591,8 @@ class OwnerPetListTests(APITestCase):
         self.assertEqual(ret_obj[0]['owner'], self.owner.id)
         self.assertEqual(ret_obj[1]['owner'], self.owner.id)
 
-class PetVisitListTests(APITestCase):
+class PetVisitListTests(BasePetClinicTest):
+    
     def setUp(self):
         self.owner = create_owner()
         self.pet_type = create_pet_type('test-pet-type')
@@ -574,6 +602,7 @@ class PetVisitListTests(APITestCase):
             create_visit(pet=self.pet)
         ]
         self.url = reverse('pet-visit-list', args=[self.pet.id])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
     
     def test_retrieve_all_visits_for_pet(self):
         """
@@ -601,7 +630,7 @@ class PetVisitListTests(APITestCase):
         self.assertEqual(ret_obj[0]['pet'], self.pet.id)
         self.assertEqual(ret_obj[1]['pet'], self.pet.id)
 
-class PetDetailTests(APITestCase):
+class PetDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner(email='test-pet-detail@example.com')
@@ -609,6 +638,7 @@ class PetDetailTests(APITestCase):
         self.pet = create_pet(owner=self.owner, name='fido', pet_type=self.pet_type)
         self.url = reverse('pet-detail', args=[self.pet.id])
         self.bad_url = reverse('pet-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_pet_by_pk(self):
         """
@@ -671,7 +701,7 @@ class PetDetailTests(APITestCase):
         ret_obj = json.loads(response.content)
         self.assertEqual(ret_obj['detail'], 'Not found.')
 
-class VisitDetailTests(APITestCase):
+class VisitDetailTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner()
@@ -680,6 +710,7 @@ class VisitDetailTests(APITestCase):
         self.visit = create_visit(pet=self.pet)
         self.url = reverse('visit-detail', args=[self.visit.id])
         self.bad_url = reverse('visit-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
 
     def test_retrieve_visit_by_pk(self):
         """

@@ -2,3 +2,4 @@ docker/
 .travis.yml
 coverage/
 README.md
+notes.txt
