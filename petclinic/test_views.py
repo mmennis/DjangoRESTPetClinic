@@ -536,6 +536,15 @@ class SpecialtyDetailTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_retrieve_by_pk_with_bad_token(self):
+        """
+        Ensure specialty cannot be retrieved by PK without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_update_by_pk(self):
         """
         Ensure specialty object can be updated
@@ -545,6 +554,15 @@ class SpecialtyDetailTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['name'], spec_data['name'])
+
+    def test_update_by_pk_with_bad_token(self):
+        """
+        Ensure specialty object cannot be updated without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        spec_data = { 'name': 'updated-specialty'}
+        response = self.client.put(self.url, spec_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_by_pk(self):
         """
@@ -568,6 +586,15 @@ class PetTypeListTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_retrieve_all_pet_types_with_bad_token(self):
+        """
+        Ensure all pet types cannot be retieved without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_create_pet_type(self):
         """
         Ensure pet type can be created
@@ -576,6 +603,15 @@ class PetTypeListTests(BasePetClinicTest):
         response = self.client.post(self.url, pet_type_data, format='json')
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)  
+
+    def test_create_pet_type_with_bad_token(self):
+        """
+        Ensure pet type cannot be created witout a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        pet_type_data = { 'name': 'pet-type-testing'}
+        response = self.client.post(self.url, pet_type_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  
 
     def test_create_pet_type_fails_if_already_exists(self):
         """
@@ -615,6 +651,14 @@ class PetTypeDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['id'], self.pet_type.id)
 
+    def test_retrieve_by_pk_with_bad_token(self):
+        """
+        Ensure pet type cannot be retireveed without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_retrieve_by_pk_fails_bad_ID(self):
         """
         Ensure pet type retrieveal fails as expected for bad ID
@@ -633,6 +677,15 @@ class PetTypeDetailTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['name'], pet_type_data['name'])
+
+    def test_update_by_pk_with_bad_token(self):
+        """
+        Ensure pet type cannot be updated without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        pet_type_data = { 'name': 'updated-pet-type'}
+        response = self.client.put(self.url, pet_type_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_update_by_pk_fails_already_exists(self):
         """
@@ -685,6 +738,14 @@ class OwnerPetListTests(BasePetClinicTest):
         self.assertEqual(ret_obj[0]['owner'], self.owner.id)
         self.assertEqual(ret_obj[1]['owner'], self.owner.id)
 
+    def test_retrieve_all_pets_for_owner_with_bad_token(self):
+        """
+        Ensure pets cannot be retrieved for a given owner without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_create_new_pets_for_owner(self):
         """
         Ensure pets can be added to an owner
@@ -727,6 +788,14 @@ class PetVisitListTests(BasePetClinicTest):
         self.assertEqual(ret_obj[0]['pet'], self.pet.id)
         self.assertEqual(ret_obj[1]['pet'], self.pet.id)
 
+    def test_retrieve_all_visits_for_pet_with_bad_token(self):
+        """
+        Ensure vists cannot be retrieved for a pet without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_create_new_visits_for_pet(self):
         """
         Ensure that you can add a list of vists to a pet
@@ -761,6 +830,14 @@ class PetDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['name'], 'fido')
 
+    def test_retrieve_pet_by_pk_with_bad_token(self):
+        """
+        Ensure a pet cannot be retrieved by ID without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_retrieve_pet_by_pk_fails_bad_ID(self):
         """
         Ensure pet retrieval fails as expected for bad ID
@@ -784,6 +861,18 @@ class PetDetailTests(BasePetClinicTest):
         self.assertEqual(ret_obj['name'], 'rover')
         self.assertEqual(ret_obj['pet_type'], pet_type.id)
 
+    def test_update_pet_by_pk_with_bad_token(self):
+        """
+        Ensure pet update by ID fails without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        pet_data = {
+            'name': 'rover', 
+        }
+        response = self.client.put(self.url, pet_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_update_pet_by_pk_fails_bad_ID(self):
         """
         Ensure pet update fails as expected with bad ID
@@ -803,6 +892,15 @@ class PetDetailTests(BasePetClinicTest):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Pet.objects.count(), 0)
+
+    def test_delete_pet_by_pk_with_bad_token(self):
+        """
+        Ensure pet cannot be deleted without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Pet.objects.count(), 1)
 
     def test_delete_pet_by_pk_fails_for_bad_ID(self):
         """
@@ -833,6 +931,14 @@ class VisitDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['pet'], self.pet.id)
 
+    def test_retrieve_visit_by_pk_with_bad_token(self):
+        """
+        Retrieve visit by ID fails without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_retrieve_visit_by_pk_fails_bad_ID(self):
         """
         Retrieve visit fails as expected for bad ID
@@ -854,6 +960,17 @@ class VisitDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['description'], 'new description')
 
+    def test_update_visit_by_pk_with_bad_token(self):
+        """
+        Ensure a visit cannot be updaetd with ID without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        visit_data = {
+            'description': 'new description'
+        }
+        response = self.client.put(self.url, visit_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_update_visit_by_pk_fails_with_bad_data(self):
         """
         Ensure a visit cannot be updaetd with bad date info
@@ -873,6 +990,15 @@ class VisitDetailTests(BasePetClinicTest):
         response = self.client.delete(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Visit.objects.count(), 0)
+
+    def test_delete_visit_by_pk_with_bad_token(self):
+        """
+        Ensure a visit cannot be deleted by ID without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Visit.objects.count(), 1)
 
     def test_delete_visit_by_pk_fails_for_bad_ID(self):
         """
