@@ -8,6 +8,8 @@ from petclinic.test_utils import *
 
 class BasePetClinicTest(APITestCase):
 
+    # TODO speed this up 
+    # Add a cached value
     def get_credentials(self):
         username = 'test_user'
         password = 'test_passwd_123'
@@ -23,13 +25,15 @@ class BasePetClinicTest(APITestCase):
         access_token = response.data['access']
         return '{} {}'.format('Bearer', access_token)
 
+    def get_bad_credentials(self):
+        return 'Bearer THIS_IS_NOT_A_VALID_TOKEN'
+
 class OwnerListTests(BasePetClinicTest):
 
     def setUp(self):
         self.owner = create_owner(email='test_owner_view@example.com')
         self.url = reverse('owner-list')
-        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
-        
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())      
 
     def test_retrieve_owners(self):
         """
@@ -39,6 +43,17 @@ class OwnerListTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Owner.objects.count(), 1)
         self.assertEqual(len(response.data), 1)
+
+    def test_retrieve_owners_with_bad_token(self):
+        """
+        Ensure that we cannot retrieve owners without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(ret_obj['detail'], 'Given token not valid for any token type')
+        self.assertIn(ret_obj['code'], 'token_not_valid')
 
     def test_retrieve_owners_filtered_by_state(self):
         owner1 = create_owner(email='test_owner_ca@example.com', state='CA')
@@ -131,6 +146,16 @@ class OwnerDetailTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(ret_obj['email'], self.owner.email)
 
+    def test_retrieve_owner_by_pk_with_bad_token(self):
+        """
+        Ensure that owner cannot be retrieved without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED) 
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
     def test_retrieve_owner_by_pk_fails(self):
         """
         Ensure that NOT FOUND status returned for bad id
@@ -148,6 +173,17 @@ class OwnerDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)        
         self.assertEqual(ret_obj['last_name'], o_data['last_name'])
         self.assertEqual(ret_obj['first_name'], o_data['first_name'])
+
+    def test_update_owner_by_pk_with_bad_token(self):
+        """
+        Ensure an owner cannot be updated without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        o_data = { 'first_name': 'change_fname', 'last_name': 'changed_lname'}
+        response = self.client.put(self.url, o_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)        
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
 
     def test_update_owner_by_pk_fails_invalid_email(self):
         """
@@ -177,6 +213,15 @@ class OwnerDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Owner.objects.count(), 0)
 
+    def test_delete_owner_by_pk_with_bad_token(self):
+        """
+        Ensure that an owner cannot be removed without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Owner.objects.count(), 1)
+
     def test_delete_owner_by_pk_fails_for_bad_ID(self):
         """
         Ensure that an owner delete fails for bad ID
@@ -202,6 +247,14 @@ class VetListTests(BasePetClinicTest):
         response = self.client.get(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_retrieve_vets_with_bad_token(self):
+        """
+        Ensure cannot retrieve vets without valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_retrieve_vets_filtered_by_state(self):
         vet1 = create_vet(email='test_vet_ca@example.com', state='CA', specialty=self.specialty)
         vet2 = create_vet(email='test_vet_tx@example.com', state='TX', specialty=self.specialty)
@@ -225,6 +278,19 @@ class VetListTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(sp.name, specialty.name)
         self.assertEqual(vet_obj['email'], 'test-new-owner@example.com')
+
+    def test_create_vet_with_bad_token(self):
+        """
+        Ensure a new vet cannot be created without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        vet_data = {'email': 'test-new-owner@example.com', 'last_name': 'Last', 
+                        'first_name': 'First', 'street_address': '1234 Main St', 
+                        'city': 'Dublin', 'state': 'CA', 'telephone': '1-408-555-1212',
+                        }
+        response = self.client.post(self.url, vet_data, format='json')
+        vet_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_vet_fails_email_already_exists(self):
         """
@@ -303,6 +369,16 @@ class VetDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['id'], self.vet.id)
 
+    def test_retrieve_vet_by_pk_with_bad_token(self):
+        """
+        Ensure a vet cannt be looked up without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
     def test_retrieve_vet_by_pk_fails_with_bad_ID(self):
         """
         Ensure a vet retrieval fails as expected with bad ID
@@ -323,6 +399,17 @@ class VetDetailTests(BasePetClinicTest):
         self.assertEqual(ret_obj['id'], self.vet.id)
         self.assertEqual(ret_obj['city'], v_data['city'])
         self.assertEqual(ret_obj['state'], v_data['state'])
+
+    def test_update_vet_by_pk_with_bad_token(self):
+        """
+        Ensure a vet cannot be updated without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        v_data = { 'city': 'Mountain View', 'state': 'CA'}
+        response = self.client.put(self.url, v_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
 
     def test_update_vet_by_pk_fails_with_invalid_email(self):
         """
@@ -352,6 +439,15 @@ class VetDetailTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Vet.objects.count(), 0)
 
+    def test_delete_vet_by_pk_with_bad_token(self):
+        """
+        Ensure a vet cannot be removed from DB without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Vet.objects.count(), 1)
+
     def test_delete_vet_by_pk_fails_with_bad_ID(self):
         """
         Ensure a vet delete fails as expected wit bad ID
@@ -378,6 +474,12 @@ class SpecialtyListTests(BasePetClinicTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj[0]['name'], self.specialty.name)
 
+    def test_retrieve_all_specialties_with_bad_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_create_specialty(self):
         """
         Ensure a specialty can be created
@@ -387,6 +489,16 @@ class SpecialtyListTests(BasePetClinicTest):
         ret_obj = json.loads(response.content)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ret_obj['name'], spec_data['name'])
+
+    def test_create_specialty_with_bad_token(self):
+        """
+        Ensure a specialty cannot be created without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        spec_data = { 'name': 'spec-testing'}
+        response = self.client.post(self.url, spec_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_specialty_fails_invalid_fields(self):
         """
@@ -592,7 +704,7 @@ class OwnerPetListTests(BasePetClinicTest):
         self.assertEqual(ret_obj[1]['owner'], self.owner.id)
 
 class PetVisitListTests(BasePetClinicTest):
-    
+
     def setUp(self):
         self.owner = create_owner()
         self.pet_type = create_pet_type('test-pet-type')
