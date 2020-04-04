@@ -8,8 +8,6 @@ from petclinic.test_utils import *
 
 class BasePetClinicTest(APITestCase):
 
-    # TODO speed this up 
-    # Add a cached value
     def get_credentials(self):
         username = 'test_user'
         password = 'test_passwd_123'
