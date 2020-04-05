@@ -1,18 +1,24 @@
 from django.http import Http404
-from rest_framework import status, generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from petclinic.models import Owner, Pet, Vet, Visit, Specialty, PetType
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
 from petclinic.serializers import (OwnerSerializer, PetSerializer,
-                                   VetSerializer, VisitSerializer, 
-                                   SpecialtySerializer, PetTypeSerializer)
+                                   PetTypeSerializer, SpecialtySerializer,
+                                   VetSerializer, VisitSerializer)
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class OwnerList(APIView):
     """
     List all owners, or create a new owner
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get(self, request, format=None):
         owners = Owner.objects.all()
         state = request.query_params.get('state', None)
@@ -32,6 +38,9 @@ class OwnerDetail(APIView):
     """
     Retrive, update or delete a specific owner instance
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get_object(self, pk):
         try:
             return Owner.objects.get(pk=pk)
@@ -60,6 +69,9 @@ class VetList(APIView):
     """
     List all vets or create a new vet
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]   
+
     def get(self, request, format=None):
         vets = Vet.objects.all()
         state = request.query_params.get('state', None)
@@ -79,6 +91,9 @@ class VetDetail(APIView):
     """
     Retrieve, update or delete specific instances of a vet
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]  
+
     def get_object(self, pk):
         try:
             return Vet.objects.get(pk=pk)
@@ -107,6 +122,9 @@ class SpecialtyList(APIView):
     """
     List all specialties
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get(self, request, format=None):
         specialties = Specialty.objects.all()
         serializer = SpecialtySerializer(specialties, many=True)
@@ -123,6 +141,9 @@ class SpecialtyDetail(APIView):
     """
     Retrieve, update a speciality (delete blocked)
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get_object(self, pk):
         try:
             return Specialty.objects.get(pk=pk)
@@ -150,6 +171,9 @@ class PetTypeList(APIView):
     """
     List all or create a new pet types
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get(self, request, format=None):
         pet_types = PetType.objects.all()
         serializer = PetTypeSerializer(pet_types, many=True)
@@ -166,6 +190,9 @@ class PetTypeDetail(APIView):
     """
     Retrieve, update a pet type (delete blocked)
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get_object(self, pk):
         try:
             return PetType.objects.get(pk=pk)
@@ -192,6 +219,9 @@ class PetTypeDetail(APIView):
 class OwnerPetList(generics.ListCreateAPIView):
     queryset = Pet.objects.all()
     serializer_class = PetSerializer
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]    
 
     def get_queryset(self):
         owner_pk = self.kwargs['owner_pk']
@@ -222,6 +252,9 @@ class PetVisitList(generics.ListCreateAPIView):
     queryset = Visit.objects.all()
     serializer_class = VisitSerializer
 
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]    
+
     def get_queryset(self):
         pet_pk = self.kwargs['pet_pk']
         return self.queryset.filter(pet=pet_pk)
@@ -249,6 +282,9 @@ class PetDetail(APIView):
     """
     Retrieval, update or delete a pet
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
     def get_object(self, pk):
         try:
             return Pet.objects.get(pk=pk)
@@ -277,6 +313,9 @@ class VisitDetail(APIView):
     """
     Retrieve, update or delete visit by pk
     """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+        
     def get_object(self, pk):
         try:
             return Visit.objects.get(pk=pk)

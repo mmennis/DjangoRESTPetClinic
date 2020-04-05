@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from petclinic.models import Owner, Pet, PetType, Vet, Visit, Specialty
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+
 
 class PetTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,4 +42,3 @@ class VetSerializer(serializers.ModelSerializer):
         model = Vet
         fields = ['id', 'email', 'first_name', 'last_name', 'street_address', 'city', 'state', 'telephone', 'specialty']
         read_only_fields = ('date_created', 'date_modified')
-    
