@@ -4,6 +4,8 @@ from rest_framework.urlpatterns import format_suffix_patterns
 from petclinic import views
 
 urlpatterns = [
+    path('users/', views.UserList.as_view(), name='user-list'),
+    path('users/<int:pk>', views.UserDetail.as_view(), name='user-detail'),
     path('owners/', views.OwnerList.as_view(), name='owner-list'),
     path('owners/<int:pk>', views.OwnerDetail.as_view(), name='owner-detail'),
     path('vets/', views.VetList.as_view(), name='vet-list'),
