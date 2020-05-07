@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
 
 
 class PetTypeSerializer(serializers.ModelSerializer):
@@ -42,3 +42,16 @@ class VetSerializer(serializers.ModelSerializer):
         model = Vet
         fields = ['id', 'email', 'first_name', 'last_name', 'street_address', 'city', 'state', 'telephone', 'specialty']
         read_only_fields = ('date_created', 'date_modified')
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['title', 'dob', 'address', 'country', 'city', 'zip', 'photo']
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    profile = UserProfileSerializer(required=True)
+
+    class Meta:
+        model = User
+        fields = ['url', 'email', 'first_name', 'last_name', 'password', 'profile']
+        extra_kwargs = { 'password': { 'write_only': True } }

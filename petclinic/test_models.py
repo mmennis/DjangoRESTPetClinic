@@ -2,10 +2,29 @@ import datetime
 
 from django.test import TestCase
 from django.utils import timezone
+from django.urls import reverse
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
 from petclinic.test_utils import *
 
+from rest_framework.test import APITestCase
+
+class UserModelTest(APITestCase):
+    def test_should_create_a_user(self):
+        """
+        A new user should be created
+        """
+        user = create_user()
+        self.assertIsInstance(user, User)
+        self.assertEqual(user.email, 'test_user@example.com')
+
+    def test_user_should_login(self):
+        user = create_user()
+        login = self.client.login(email='test_user@example.com', password='test_passwd_123')
+        self.assertTrue(login)
+
+class UserProfileModelTest(TestCase):
+    pass
 
 class VetModelTest(TestCase):
 

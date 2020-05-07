@@ -2,7 +2,8 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
-from rest_framework_simplejwt.state import User
+#from rest_framework_simplejwt.state import User
+from .models import User
 
 from petclinic.test_utils import *
 
@@ -10,14 +11,18 @@ class BasePetClinicTest(APITestCase):
 
     def get_credentials(self):
         username = 'test_user'
+        email = 'test_user@example.com'
         password = 'test_passwd_123'
         user = User.objects.create_user(
+            email = email,
             username = username,
+            first_name = 'First',
+            last_name = 'Last',
             password = password
         )
         token_url = reverse('token_obtain_pair')
         response = self.client.post(token_url, data = {
-            User.USERNAME_FIELD: username,
+            User.USERNAME_FIELD: email,
             'password': password,
         },)
         access_token = response.data['access']
