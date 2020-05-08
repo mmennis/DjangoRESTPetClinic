@@ -16,7 +16,9 @@ def create_user(email='test_user@example.com', username='test_user',
     return user
 
 def create_user_profile(user):
-    user_profile = UserProfile.objects.create(user=user, title='Mr', dob=timezone.now().date())
+    user_profile = UserProfile.objects.create(user=user, title='Mr', dob=timezone.now().date(),
+                                                address='123 Main St', country='USA', city='San Jose',
+                                                zip='95050')
     return user_profile
 
 def create_specialty(specialty_name):

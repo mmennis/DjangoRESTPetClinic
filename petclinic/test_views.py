@@ -31,6 +31,100 @@ class BasePetClinicTest(APITestCase):
     def get_bad_credentials(self):
         return 'Bearer THIS_IS_NOT_A_VALID_TOKEN'
 
+class UserListTest(BasePetClinicTest):
+
+    def setUp(self):
+        self.url = reverse('user-list')
+        self.test_email = 'test_views_user@example.com'
+        self.user = create_user(email=self.test_email)
+        self.profile = create_user_profile(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())   
+
+    def test_retrieve_users(self):
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj[0]['email'], self.test_email)
+        self.assertIsNotNone(ret_obj[0]['profile'])
+        self.assertTrue(ret_obj[0]['url'].startswith('http://testserver/petclinic/users/'))
+
+    def test_retrieve_users_fails_with_bad_creds(self):
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(ret_obj['detail'], 'Given token not valid for any token type')
+        self.assertIn(ret_obj['code'], 'token_not_valid')
+
+    def test_create_new_user_no_profile_fails(self):
+        """
+        Ensure a new user cannot be created without a profile
+        """
+        user_data = {
+            'email': 'test_post_new_user@example.com', 'username': 'test_post_new_user',
+            'first_name': 'first', 'last_name': 'last', 'password': 'test_password_54321'
+        }
+        response = self.client.post(self.url, user_data, format='json')
+        err_response = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(err_response['profile'][0], 'This field is required.')
+
+    def test_create_new_user(self):
+        """
+        Ensure a new user can be created
+        """
+        user_data = {
+            'email': 'test_post_new_user@example.com', 'username': 'test_post_new_user',
+            'first_name': 'first', 'last_name': 'last', 'password': 'test_password_54321',
+            'profile': {
+                'address': '123 Main St', 'country': 'USA', 'city': 'San Francosco',
+                'zip': '95050', 'title': 'Mr', 'dob': timezone.now().date()
+            }
+        }
+        response = self.client.post(self.url, user_data, format='json')
+        user_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(user_obj['profile'])
+        
+class UserDetailTests(BasePetClinicTest):
+
+    def setUp(self):
+        self.test_email = 'test_user_detail@example.com'
+        self.user = create_user(email=self.test_email)
+        self.profile = create_user_profile(user=self.user)
+        self.url = reverse('user-detail', args=[self.user.id])
+        self.bad_url = reverse('user-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
+
+    def test_retrieve_user_by_pk(self):
+        """
+        Ensure that a user can be retrieved by primary key
+        """
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['email'], self.test_email)
+        self.assertTrue(ret_obj['url'].startswith('http://testserver/petclinic/users/'))
+
+    def test_retrieve_user_by_pk_with_bad_token(self):
+        """
+        Ensure that a user cannot be retrieved without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
+    def test_retrieve_user_by_pk_fails(self):
+        """
+        Ensure that get with bad pk fails gracefully
+        """
+        response = self.client.get(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
 class OwnerListTests(BasePetClinicTest):
 
     def setUp(self):
