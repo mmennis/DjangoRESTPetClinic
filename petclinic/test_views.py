@@ -134,11 +134,54 @@ class UserDetailTests(BasePetClinicTest):
         }
         response = self.client.put(self.url, up_data, format='json')
         ret_obj = json.loads(response.content)
-        print(ret_obj)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ret_obj['username'], up_data['username'])
         self.assertEqual(ret_obj['first_name'], up_data['first_name'])
         self.assertEqual(ret_obj['profile']['country'], up_data['profile']['country'])
+
+    def test_update_user_by_pk_fails_bad_token(self):
+        """
+        Ensure that update is blocked if token is invalid
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.put(self.url, { 'username': 'test', 'profile': {}}, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
+    def test_update_user_by_pk_fails_bad_id(self):
+        """
+        Ensre that update is blocked if id is invalid
+        """
+        response = self.client.put(self.bad_url, { 'username': 'test', 'profile': {}}, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+    def test_delete_user_by_pk(self):
+        """
+        Ensure that user can be deleted from DB
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_delete_user_fails_bad_token(self):
+        """
+        Ensure that user delete is blocked if invalid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(User.objects.count(), 2)
+
+    def test_delete_user_fails_if_bad_id(self):
+        """
+        Ensure that user delete fails of ID is incorrect
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(User.objects.count(), 2)
 
 class OwnerListTests(BasePetClinicTest):
 
