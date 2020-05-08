@@ -53,7 +53,7 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ['url', 'email', 'first_name', 'last_name', 'password', 'profile']
+        fields = ['url', 'email', 'first_name', 'last_name', 'password', 'profile', 'username']
         extra_kwargs = { 'password': { 'write_only': True } }
 
     def create(self, validated_data):
@@ -69,7 +69,14 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         profile_data = validated_data.pop('profile')
         profile = instance.profile
 
+        # TODO - CHECK THESE - especially password
         instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        passwd = validated_data.get('password', None)
+        if passwd:
+            instance.set_password(passwd)
         instance.save()
 
         profile.title = profile_data.get('title', profile.title)

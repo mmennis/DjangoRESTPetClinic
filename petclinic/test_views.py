@@ -40,7 +40,7 @@ class UserListTest(BasePetClinicTest):
         self.profile = create_user_profile(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())   
 
-    def test_retrieve_users(self):
+    def test_retrieve_all_users(self):
         response = self.client.get(self.url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
@@ -124,6 +124,21 @@ class UserDetailTests(BasePetClinicTest):
         response = self.client.get(self.bad_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_update_user_by_pk(self):
+        """
+        Ensure user can be updated using PUT
+        """
+        up_data = {
+            'username': 'test_updated_user', 'first_name': 'new_first',
+            'profile': { 'country': 'France', }
+        }
+        response = self.client.put(self.url, up_data, format='json')
+        ret_obj = json.loads(response.content)
+        print(ret_obj)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['username'], up_data['username'])
+        self.assertEqual(ret_obj['first_name'], up_data['first_name'])
+        self.assertEqual(ret_obj['profile']['country'], up_data['profile']['country'])
 
 class OwnerListTests(BasePetClinicTest):
 
