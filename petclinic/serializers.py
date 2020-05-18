@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
 
 
 class PetTypeSerializer(serializers.ModelSerializer):
@@ -42,3 +42,49 @@ class VetSerializer(serializers.ModelSerializer):
         model = Vet
         fields = ['id', 'email', 'first_name', 'last_name', 'street_address', 'city', 'state', 'telephone', 'specialty']
         read_only_fields = ('date_created', 'date_modified')
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['title', 'dob', 'address', 'country', 'city', 'zip', 'photo']
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    profile = UserProfileSerializer(required=True)
+
+    class Meta:
+        model = User
+        fields = ['url', 'email', 'first_name', 'last_name', 'password', 'profile', 'username']
+        extra_kwargs = { 'password': { 'write_only': True } }
+
+    def create(self, validated_data):
+        profile_data = validated_data.pop('profile')
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        UserProfile.objects.create(user=user, **profile_data)
+        return user
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile')
+        profile = instance.profile
+
+        # TODO - CHECK THESE - especially password
+        instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        passwd = validated_data.get('password', None)
+        if passwd:
+            instance.set_password(passwd)
+        instance.save()
+
+        profile.title = profile_data.get('title', profile.title)
+        profile.dob = profile_data.get('dob', profile.dob)
+        profile.address = profile_data.get('address', profile.address)
+        profile.country = profile_data.get('country', profile.country)
+        profile.city = profile_data.get('city', profile.city)
+        profile.zip = profile_data.get('zip', profile.zip)
+        profile.photo = profile_data.get('photo', profile.photo)
+        profile.save()
+        return instance

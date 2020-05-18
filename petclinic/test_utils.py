@@ -5,10 +5,22 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.renderers import JSONRenderer
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
 
 
 # Create your tests here.
+def create_user(email='test_user@example.com', username='test_user', 
+                password='test_passwd_123', last_name='Last', first_name='First'):
+    user = User.objects.create_user(username=username, email=email, password=password, 
+                                    last_name=last_name, first_name=first_name, is_active=True)
+    return user
+
+def create_user_profile(user):
+    user_profile = UserProfile.objects.create(user=user, title='Mr', dob=timezone.now().date(),
+                                                address='123 Main St', country='USA', city='San Jose',
+                                                zip='95050')
+    return user_profile
+
 def create_specialty(specialty_name):
     s = Specialty()
     s.name = specialty_name

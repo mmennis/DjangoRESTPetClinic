@@ -2,10 +2,56 @@ import datetime
 
 from django.test import TestCase
 from django.utils import timezone
+from django.urls import reverse
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit
+from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
 from petclinic.test_utils import *
 
+from rest_framework.test import APITestCase
+
+class UserModelTest(APITestCase):
+
+    def test_should_create_a_user(self):
+        """
+        A new user should be created
+        """
+        user = create_user()
+        self.assertIsInstance(user, User)
+        self.assertEqual(user.email, 'test_user@example.com')
+
+    def test_new_user_should_be_persisted(self):
+        """
+        newly created user should be in DB
+        """
+        user = create_user()
+        users = User.objects.all()
+        self.assertIn(user, users)
+
+    def test_user_should_login(self):
+        """
+        A created user should be able to log in
+        """
+        user = create_user()
+        login = self.client.login(email='test_user@example.com', password='test_passwd_123')
+        self.assertTrue(login)
+
+class UserProfileModelTest(TestCase):
+
+    def test_should_create_a_user_profile(self):
+        """
+        A new user profile should be associated with a user
+        """
+        user = create_user()
+        profile = create_user_profile(user=user)
+        self.assertIsInstance(profile, UserProfile)
+
+    def test_profile_should_attach_to_user(self):
+        """
+        profile is associated with user 
+        """
+        user = create_user()
+        profile = create_user_profile(user=user)
+        self.assertEqual(user.profile.address, profile.address)
 
 class VetModelTest(TestCase):
 
@@ -25,7 +71,6 @@ class VetModelTest(TestCase):
         vet = create_vet()
         vets = Vet.objects.all()
         self.assertIn(vet, vets)
-
 
 class PetModelTest(TestCase):
     

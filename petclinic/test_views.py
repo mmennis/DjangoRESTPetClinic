@@ -2,7 +2,8 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
-from rest_framework_simplejwt.state import User
+#from rest_framework_simplejwt.state import User
+from .models import User
 
 from petclinic.test_utils import *
 
@@ -10,14 +11,18 @@ class BasePetClinicTest(APITestCase):
 
     def get_credentials(self):
         username = 'test_user'
+        email = 'test_user@example.com'
         password = 'test_passwd_123'
         user = User.objects.create_user(
+            email = email,
             username = username,
+            first_name = 'First',
+            last_name = 'Last',
             password = password
         )
         token_url = reverse('token_obtain_pair')
         response = self.client.post(token_url, data = {
-            User.USERNAME_FIELD: username,
+            User.USERNAME_FIELD: email,
             'password': password,
         },)
         access_token = response.data['access']
@@ -25,6 +30,158 @@ class BasePetClinicTest(APITestCase):
 
     def get_bad_credentials(self):
         return 'Bearer THIS_IS_NOT_A_VALID_TOKEN'
+
+class UserListTest(BasePetClinicTest):
+
+    def setUp(self):
+        self.url = reverse('user-list')
+        self.test_email = 'test_views_user@example.com'
+        self.user = create_user(email=self.test_email)
+        self.profile = create_user_profile(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())   
+
+    def test_retrieve_all_users(self):
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj[0]['email'], self.test_email)
+        self.assertIsNotNone(ret_obj[0]['profile'])
+        self.assertTrue(ret_obj[0]['url'].startswith('http://testserver/petclinic/users/'))
+
+    def test_retrieve_users_fails_with_bad_creds(self):
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn(ret_obj['detail'], 'Given token not valid for any token type')
+        self.assertIn(ret_obj['code'], 'token_not_valid')
+
+    def test_create_new_user_no_profile_fails(self):
+        """
+        Ensure a new user cannot be created without a profile
+        """
+        user_data = {
+            'email': 'test_post_new_user@example.com', 'username': 'test_post_new_user',
+            'first_name': 'first', 'last_name': 'last', 'password': 'test_password_54321'
+        }
+        response = self.client.post(self.url, user_data, format='json')
+        err_response = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(err_response['profile'][0], 'This field is required.')
+
+    def test_create_new_user(self):
+        """
+        Ensure a new user can be created
+        """
+        user_data = {
+            'email': 'test_post_new_user@example.com', 'username': 'test_post_new_user',
+            'first_name': 'first', 'last_name': 'last', 'password': 'test_password_54321',
+            'profile': {
+                'address': '123 Main St', 'country': 'USA', 'city': 'San Francosco',
+                'zip': '95050', 'title': 'Mr', 'dob': timezone.now().date()
+            }
+        }
+        response = self.client.post(self.url, user_data, format='json')
+        user_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(user_obj['profile'])
+        
+class UserDetailTests(BasePetClinicTest):
+
+    def setUp(self):
+        self.test_email = 'test_user_detail@example.com'
+        self.user = create_user(email=self.test_email)
+        self.profile = create_user_profile(user=self.user)
+        self.url = reverse('user-detail', args=[self.user.id])
+        self.bad_url = reverse('user-detail', args=[10000])
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_credentials())
+
+    def test_retrieve_user_by_pk(self):
+        """
+        Ensure that a user can be retrieved by primary key
+        """
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['email'], self.test_email)
+        self.assertTrue(ret_obj['url'].startswith('http://testserver/petclinic/users/'))
+
+    def test_retrieve_user_by_pk_with_bad_token(self):
+        """
+        Ensure that a user cannot be retrieved without a valid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        ret_obj = json.loads(response.content)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
+    def test_retrieve_user_by_pk_fails(self):
+        """
+        Ensure that get with bad pk fails gracefully
+        """
+        response = self.client.get(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_user_by_pk(self):
+        """
+        Ensure user can be updated using PUT
+        """
+        up_data = {
+            'username': 'test_updated_user', 'first_name': 'new_first',
+            'profile': { 'country': 'France', }
+        }
+        response = self.client.put(self.url, up_data, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(ret_obj['username'], up_data['username'])
+        self.assertEqual(ret_obj['first_name'], up_data['first_name'])
+        self.assertEqual(ret_obj['profile']['country'], up_data['profile']['country'])
+
+    def test_update_user_by_pk_fails_bad_token(self):
+        """
+        Ensure that update is blocked if token is invalid
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.put(self.url, { 'username': 'test', 'profile': {}}, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(ret_obj['detail'], 'Given token not valid for any token type')
+
+    def test_update_user_by_pk_fails_bad_id(self):
+        """
+        Ensre that update is blocked if id is invalid
+        """
+        response = self.client.put(self.bad_url, { 'username': 'test', 'profile': {}}, format='json')
+        ret_obj = json.loads(response.content)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(ret_obj['detail'], 'Not found.')
+
+    def test_delete_user_by_pk(self):
+        """
+        Ensure that user can be deleted from DB
+        """
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(User.objects.count(), 1)
+
+    def test_delete_user_fails_bad_token(self):
+        """
+        Ensure that user delete is blocked if invalid token
+        """
+        self.client.credentials(HTTP_AUTHORIZATION=self.get_bad_credentials())
+        response = self.client.delete(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(User.objects.count(), 2)
+
+    def test_delete_user_fails_if_bad_id(self):
+        """
+        Ensure that user delete fails of ID is incorrect
+        """
+        response = self.client.delete(self.bad_url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(User.objects.count(), 2)
 
 class OwnerListTests(BasePetClinicTest):
 
