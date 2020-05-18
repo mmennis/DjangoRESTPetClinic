@@ -5,7 +5,8 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.renderers import JSONRenderer
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
+from petclinic.models import (Owner, Pet, PetType, Specialty, User,
+                              UserProfile, Vet, Visit)
 
 
 # Create your tests here.

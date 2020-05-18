@@ -1,15 +1,16 @@
 from django.http import Http404
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User
+from petclinic.models import Owner, Pet, PetType, Specialty, User, Vet, Visit
 from petclinic.serializers import (OwnerSerializer, PetSerializer,
                                    PetTypeSerializer, SpecialtySerializer,
-                                   VetSerializer, VisitSerializer, UserSerializer)
-
-from rest_framework.permissions import IsAuthenticated
+                                   UserSerializer, VetSerializer,
+                                   VisitSerializer)
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 class UserList(APIView):
     """
