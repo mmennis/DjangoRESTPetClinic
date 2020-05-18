@@ -2,10 +2,11 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
-#from rest_framework_simplejwt.state import User
-from .models import User
 
 from petclinic.test_utils import *
+
+from .models import User
+
 
 class BasePetClinicTest(APITestCase):
 

@@ -1,13 +1,14 @@
 import datetime
 
 from django.test import TestCase
-from django.utils import timezone
 from django.urls import reverse
+from django.utils import timezone
+from rest_framework.test import APITestCase
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
+from petclinic.models import (Owner, Pet, PetType, Specialty, User,
+                              UserProfile, Vet, Visit)
 from petclinic.test_utils import *
 
-from rest_framework.test import APITestCase
 
 class UserModelTest(APITestCase):
 

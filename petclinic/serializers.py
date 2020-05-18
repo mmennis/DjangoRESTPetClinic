@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from petclinic.models import Owner, Pet, PetType, Specialty, Vet, Visit, User, UserProfile
+from petclinic.models import (Owner, Pet, PetType, Specialty, User,
+                              UserProfile, Vet, Visit)
 
 
 class PetTypeSerializer(serializers.ModelSerializer):
