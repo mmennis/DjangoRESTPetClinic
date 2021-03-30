@@ -3,7 +3,7 @@ astroid==2.3.3
 coverage==5.0.4
 Django==3.0.12
 django-filter==2.2.0
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 djangorestframework-simplejwt==4.4.0
 fake-factory==9999.9.9
 Faker==4.0.2
